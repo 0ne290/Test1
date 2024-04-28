@@ -20,30 +20,34 @@ public class DrinksVendingMachine
         
     }
     
-    private int GetChange(int change, int[] getChangeResults)   
+    private Dictionary<int, int> GetChange(int change)// Жадный алгоритм расчета кол-ва монет для сдачи. Представьте, что монеты с одинаковым номиналом собраны в кучи, лежащие в ряд слева направо. Тогда этот жадный алгоритм будет максимально быстро израсходовать самые левые кучи - не "ВАУ", конечно, но зато просто. Хотя псевдо-оптимизация все же присутствует - представьте, что на каждый расчет порядок куч всегда определяется случайно
     {
-        var minCoins = change;
+        var res = new Dictionary<int, int>();
 
-        if (_outerCoins.ContainsKey(minCoins))
-        {
-            getChangeResults[change] = 1;
-            return 1;
-        }
+        var shuffledCoins = _innerCoins.Select().ToArray();
+        Random.Shared.Shuffle(shuffledCoins);
         
-        if (getChangeResults[change] != 0)
-            return getChangeResults[change];
-        
-        foreach (var value in values.Where(x => x <= change))
+        foreach(var coin in shuffledCoins)
         {
-            int numCoins = 1 + GetChange(values, change - value);
-            if (numCoins < minCoins)
+            var count = change / coin.Key;
+            
+            if (count > coin.Value)
+                count = coin.Value;
+
+            res.Add(coin.Key, count);
+            
+            change = change % coin.Key;
+            
+            if (change == 0)
             {
-                minCoins = numCoins;
-                getChangeResults[change] = minCoins;
+                foreach (var changeCoin in res)
+                    _innerCoins[changeCoin.Key] -= changeCoin.Value();
+                
+                return res;
             }
         }
 
-        return minCoins;
+        return new Dictionary<int, int>();// Сдачу выдать невозможно
     }
     
     public void ResetSelection()
@@ -66,7 +70,7 @@ public class DrinksVendingMachine
 
     public int DepositedAmount { get; set; }
 
-    private readonly Dictionary<int, int> _innerCoins;
+    private readonly Dictionary<int, int> _innerCoins;// Ключ - номинал монеты, значение по этому ключу - кол-во этих монет
     
     private readonly Dictionary<int, int> _outerCoins;
 
