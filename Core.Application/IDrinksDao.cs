@@ -1,4 +1,6 @@
-namespace Core.Domain;
+using Core.Domain;
+
+namespace Core.Application;
 
 public interface IDrinksDao
 {
