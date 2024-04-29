@@ -2,17 +2,17 @@ using Core.Domain;
 
 namespace Core.Application;
 
-public interface IDrinksDao
+public interface IDrinksDao : IDisposable
 {
-    bool Create(Drink drink);
+    Task Create(Drink drink);
 
     IEnumerable<Drink> GetAll();
 
-    Drink? TryGetByKey(int key);
+    Task<Drink?> TryGetByKey(int key);
 
     void Update(Drink drink);
 
     void Remove(Drink drink);
 
-    bool SaveChanges();
+    Task SaveChanges();
 }

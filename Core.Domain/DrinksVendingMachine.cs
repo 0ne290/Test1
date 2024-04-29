@@ -16,20 +16,20 @@ public class DrinksVendingMachine
     
     public bool DrinkSelected(Drink drink) => _selectedDrinks.Contains(drink);
 
-    public bool DrinkAvailabe(Drink drink) => _capacityOuterCoins >= drink.Cost;
+    public bool DrinkAvailabe(Drink drink) => Rest >= drink.Cost;
     
     public bool CoinIsAllowed(int denomination) => _outerCoins.ContainsKey(denomination);
 
     public void DepositeCoin(int denomination)
     {
         _outerCoins[denomination]++;
-        _capacityOuterCoins += denomination;
+        Rest += denomination;
     }
 
     public Dictionary<int, int> BuyDrinks()// Если сдачу выдать невозможно, вернет буфер; если сдача не требуется - пустой словарь
     {
-        var change = _capacityOuterCoins;
-        _capacityOuterCoins = 0;
+        var change = Rest;
+        Rest = 0;
 
         Dictionary<int, int> res;
         if (change == 0)
@@ -87,7 +87,7 @@ public class DrinksVendingMachine
         foreach (var denomination in _outerCoins.Keys)
             _innerCoins[denomination] -= _outerCoins[denomination];
 
-        return _outerCoins.ToDictionary();// Сдачу выдать невозможно
+        return _outerCoins.ToDictionary();
     }
     
     public void ResetSelection()
@@ -98,17 +98,17 @@ public class DrinksVendingMachine
 
     public void UnselectDrink(Drink drink)
     {
-        _capacityOuterCoins += drink.Cost;
+        Rest += drink.Cost;
         _selectedDrinks.Remove(drink);
     }
 
     public void SelectDrink(Drink drink)
     {
-        _capacityOuterCoins -= drink.Cost;
+        Rest -= drink.Cost;
         _selectedDrinks.Add(drink);
     }
 
-    private int _capacityOuterCoins;
+    public int Rest { get; private set; }
 
     private readonly Dictionary<int, int> _innerCoins;// Монеты автомата. Ключ - номинал монеты, значение по этому ключу - кол-во этих монет
     
