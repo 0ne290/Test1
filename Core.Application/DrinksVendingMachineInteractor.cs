@@ -18,11 +18,13 @@ public class DrinksVendingMachineInteractor
         
         if (drink == null)
             throw new Exception($"This machine does not contain a drink with the {drinkKey} key.");
+        
         if (drink.Quantity < 1)
             throw new Exception($"Drink {drink.Name} is out of stock.");
-        if (_vending.DepositedAmount < drink.Cost)
+        
+        if (!_vending.DrinkAvailabe(drink))
             throw new Exception($"Cost of the drink {drink.Name} is more than the deposited amount.");
-
+        
         if (_vending.DrinkSelected(drink))
             _vending.UnselectDrink(drink);
         else
