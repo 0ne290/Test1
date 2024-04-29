@@ -26,22 +26,35 @@ public class DrinksVendingMachine
         _capacityOuterCoins += denomination;
     }
 
-    public Dictionary<int, int> BuyDrinks()
+    public Dictionary<int, int> BuyDrinks()// Если сдачу выдать невозможно, вернет буфер; если сдача не требуется - пустой словарь
     {
-        // Внесенные клиентом монеты "уходят в собственность автомата"
-        foreach (var denomination in _outerCoins.Keys)
-        {
-            _innerCoins[denomination] += _outerCoins[denomination];
-            _outerCoins[denomination] = 0;
-        }
-
+        var change = _capacityOuterCoins;
         _capacityOuterCoins = 0;
+
+        Dictionary<int, int> res;
+        if (change == 0)
+        {
+            res = new Dictionary<int, int>();
+            
+            foreach (var drink in _selectedDrinks)
+                drink.Quantity--;
+        }
+        else
+            res = GetChange(change);
         
-        
+        _selectedDrinks.Clear();
+        foreach (var denomination in _outerCoins.Keys)
+            _outerCoins[denomination] = 0;
+
+        return res;
     }
     
     private Dictionary<int, int> GetChange(int change)// Жадный алгоритм расчета кол-ва монет для сдачи. Представьте, что монеты с одинаковым номиналом собраны в кучи, лежащие в ряд слева направо. Тогда этот жадный алгоритм будет максимально быстро израсходовать самые левые кучи - не "ВАУ", конечно, но зато просто. Хотя псевдо-оптимизация все же присутствует - представьте также, что на каждый расчет порядок куч всегда определяется случайно
     {
+        // К монетам автомата прибавляются монеты буфера
+        foreach (var denomination in _outerCoins.Keys)
+            _innerCoins[denomination] += _outerCoins[denomination];
+        
         var res = new Dictionary<int, int>();
 
         var shuffledCoins = _innerCoins.Select(c => c).ToArray();
@@ -61,13 +74,20 @@ public class DrinksVendingMachine
             if (change != 0)
                 continue;
             
+            foreach (var drink in _selectedDrinks)
+                drink.Quantity--;
+            
             foreach (var changeCoin in res)
                 _innerCoins[changeCoin.Key] -= changeCoin.Value;
                 
             return res;
         }
+        
+        // Сдачу выдать не получилось - вычитаем от монет автомата монеты буфера
+        foreach (var denomination in _outerCoins.Keys)
+            _innerCoins[denomination] -= _outerCoins[denomination];
 
-        return new Dictionary<int, int>();// Сдачу выдать невозможно
+        return _outerCoins.ToDictionary();// Сдачу выдать невозможно
     }
     
     public void ResetSelection()
