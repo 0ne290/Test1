@@ -19,6 +19,19 @@ public class HomeController : Controller
         return View();
     }
 
+    public ContentResult DepositeCoin(int denomination) => Content(_vending.DepositeCoin(denomination).ToString());
+
+    public async Task<ContentResult> ChooseDrink(int drinkKey) => Content(await _vending.ChooseDrink(drinkKey).ToString());
+    
+    public JsonResult BuyDrinks() => Json(_vending.BuyDrinks());
+    
+    public Ok ResetSelection()
+    {
+        _vending.ResetSelection();
+
+        return Ok();
+    }
+
     public ContentResult GetRest() => Content(_vending.Rest.ToString());
     
     public ContentResult GetDeposite() => Content(_vending.DepositedAmount.ToString());
