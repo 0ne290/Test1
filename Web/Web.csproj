@@ -13,7 +13,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="CoreAdmin" Version="3.0.0" />
+      <PackageReference Include="CoreAdmin" Version="2.7.1" />
       <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.4" />
     </ItemGroup>
 
