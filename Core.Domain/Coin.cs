@@ -1,14 +1,15 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace Core.Domain;
 
 public class Coin
 {
-    public Coin(int denomination, int quantity)
-    {
-        Denomination = denomination;
-        Quantity = quantity;
-    }
-
-    public int Denomination { get; }
+    [Key]
+    public int Denomination { get; set; }
     
+    [Required]
     public int Quantity { get; set; }
+    
+    [Required]
+    public bool IsRefillable { get; set; }
 }
