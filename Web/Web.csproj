@@ -12,4 +12,9 @@
       <ProjectReference Include="..\Dal\Dal.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <PackageReference Include="CoreAdmin" Version="3.0.0" />
+      <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.4" />
+    </ItemGroup>
+
 </Project>

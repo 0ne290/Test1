@@ -1,7 +1,11 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using Core.Application;
 using Core.Domain;
 using Dal;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 
 namespace Web;
 
@@ -26,6 +30,29 @@ internal static class Program
                     new DrinksVendingMachine(new CoinsDao(new VendingContext(options))),
                     new DrinksDao(new VendingContext(options)));
             });
+        builder.Services.AddCoreAdmin("Administrator");
+        
+        // Настраиваем авторизацию
+        builder.Services.AddAuthorization();
+        builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+            .AddJwtBearer(options =>
+            {
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    // указывает, будет ли валидироваться издатель при валидации токена
+                    ValidateIssuer = true,
+                    // строка, представляющая издателя
+                    ValidIssuer = "TestServer",
+                    // будет ли валидироваться потребитель токена
+                    ValidateAudience = true,
+                    // установка потребителя токена
+                    ValidAudience = "TestServerClient",
+                    // установка ключа безопасности
+                    IssuerSigningKey = new SymmetricSecurityKey("mysupersecret_secretsecretsecretkey!123"u8.ToArray()),
+                    // валидация ключа безопасности
+                    ValidateIssuerSigningKey = true,
+                };
+            });
 
         var app = builder.Build();
 
@@ -40,13 +67,23 @@ internal static class Program
         app.UseHttpsRedirection();
         app.UseStaticFiles();
 
+        app.MapDefaultControllerRoute();
         app.UseRouting();
 
+        app.UseAuthentication();
         app.UseAuthorization();
 
         app.MapControllerRoute(
             name: "default",
             pattern: "{controller=Home}/{action=Index}/{id?}");
+        
+        // После каждого запуска сервера всегда будет генерироваться и печататься в консоль один бессрочный JWT-токен с ролью "Administrator"
+        var jwt = new JwtSecurityToken(
+            issuer: "TestServer",
+            audience: "TestServerClient",
+            claims: new[] { new Claim(ClaimsIdentity.DefaultRoleClaimType, "Administrator") },
+            signingCredentials: new SigningCredentials(new SymmetricSecurityKey("mysupersecret_secretsecretsecretkey!123"u8.ToArray()), SecurityAlgorithms.HmacSha256));
+        Console.WriteLine(new JwtSecurityTokenHandler().WriteToken(jwt));
 
         await app.RunAsync();
     }
