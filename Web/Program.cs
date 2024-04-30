@@ -1,5 +1,3 @@
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
 using Core.Application;
 using Core.Domain;
 using Dal;
@@ -32,7 +30,7 @@ internal static class Program
             });
         builder.Services.AddCoreAdmin("Administrator");
         
-        // Настраиваем авторизацию
+        // Настраиваем авторизацию с помощью JWT
         builder.Services.AddAuthorization();
         builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             .AddJwtBearer(options =>
@@ -51,6 +49,9 @@ internal static class Program
                     IssuerSigningKey = new SymmetricSecurityKey("mysupersecret_secretsecretsecretkey!123"u8.ToArray()),
                     // валидация ключа безопасности
                     ValidateIssuerSigningKey = true,
+                    //
+                    ValidateLifetime = false,
+                    LifetimeValidator = (_, _, _, _) => true
                 };
             });
 
@@ -76,14 +77,6 @@ internal static class Program
         app.MapControllerRoute(
             name: "default",
             pattern: "{controller=Home}/{action=Index}/{id?}");
-        
-        // После каждого запуска сервера всегда будет генерироваться и печататься в консоль один бессрочный JWT-токен с ролью "Administrator"
-        var jwt = new JwtSecurityToken(
-            issuer: "TestServer",
-            audience: "TestServerClient",
-            claims: new[] { new Claim(ClaimsIdentity.DefaultRoleClaimType, "Administrator") },
-            signingCredentials: new SigningCredentials(new SymmetricSecurityKey("mysupersecret_secretsecretsecretkey!123"u8.ToArray()), SecurityAlgorithms.HmacSha256));
-        Console.WriteLine(new JwtSecurityTokenHandler().WriteToken(jwt));
 
         await app.RunAsync();
     }
