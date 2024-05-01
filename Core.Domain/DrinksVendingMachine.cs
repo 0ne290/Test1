@@ -2,40 +2,34 @@
 
 public class DrinksVendingMachine : IDisposable
 {
-    public DrinksVendingMachine(ICoinsDao coinsDao)// Первый параметр - с какими монетами автомат вообще может работать и сколько их будет содержатся на момент создания объекта; Второй параметр - монеты, исключаемые из первого параметра (результирующее множество этой операции станет множеством монет, доступных для пополнения клиентом автомата)
+    public DrinksVendingMachine(IEnumerable<Coin> coins)
     {
-        _coinsDao = coinsDao;
-        
-        var coins = _coinsDao.GetAll().ToArray();
-        
-        _innerCoins = coins.ToDictionary(c => c.Denomination);
-        
-        _outerCoins = coins.Where(c => c.IsRefillable).ToDictionary(c => c.Denomination);
+        _innerCoins = new HashSet(coins);
+        _outerCoins = new HashSet(coins.Where(c => c.IsRefillable).Select(c => new Coin() { Denomination = c.Denomination, Quantity = 0, IsRefillable = true }));
     }
-
-    public IEnumerable<Coin> GetAllCoins() => _coinsDao.GetAll();
     
     public bool DrinkSelected(Drink drink) => _selectedDrinks.Contains(drink);
 
     public bool DrinkAvailabe(Drink drink) => Rest >= drink.Cost;
     
-    public bool CoinIsAllowed(int denomination) => _outerCoins.ContainsKey(denomination);
+    public bool CoinIsAllowed(Coin coin) => _outerCoins.Contains(coin);
 
-    public void DepositeCoin(int denomination)
+    public void DepositeCoin(Coin coin)
     {
-        _outerCoins[denomination].Quantity++;
+        _outerCoins.TryGetValue(coin, out var outerCoin);
+        outerCoin.Quantity++;
         Rest += denomination;
     }
 
-    public Dictionary<int, int> BuyDrinks()// Если сдачу выдать невозможно, вернет буфер; если сдача не требуется - пустой словарь
+    public IEnumerable<Coin> BuyDrinks()// Если сдачу выдать невозможно, вернет буфер; если сдача не требуется - пустую коллекцию монет
     {
         var change = Rest;
         Rest = 0;
 
-        Dictionary<int, int> res;
+        IEnumerable<Coin> res;
         if (change == 0)
         {
-            res = new Dictionary<int, int>();
+            res = Array.Empty<Coin>();
             
             foreach (var drink in _selectedDrinks)
                 drink.Quantity--;
@@ -44,35 +38,36 @@ public class DrinksVendingMachine : IDisposable
             res = GetChange(change);
         
         _selectedDrinks.Clear();
-        foreach (var denomination in _outerCoins.Keys)
-            _outerCoins[denomination].Quantity = 0;
-        
-        _coinsDao.UpdateRange(_innerCoins.Select(c => c.Value));
+        foreach (var coin in _outerCoins)
+            coin.Quantity = 0;
 
         return res;
     }
     
-    private Dictionary<int, int> GetChange(int change)// Жадный алгоритм расчета кол-ва монет для сдачи. Представьте, что монеты с одинаковым номиналом собраны в кучи, лежащие в ряд слева направо. Тогда этот жадный алгоритм будет максимально быстро израсходовать самые левые кучи - не "ВАУ", конечно, но зато просто. Хотя псевдо-оптимизация все же присутствует - представьте также, что на каждый расчет порядок куч всегда определяется случайно
+    private IEnumerable<Coin> GetChange(int change)// Жадный алгоритм расчета кол-ва монет для сдачи. Представьте, что монеты с одинаковым номиналом собраны в кучи, лежащие в ряд слева направо. Тогда этот жадный алгоритм будет максимально быстро израсходовать самые левые кучи - не "ВАУ", конечно, но зато просто. Хотя псевдо-оптимизация все же присутствует - представьте также, что на каждый расчет порядок куч всегда определяется случайно
     {
         // К монетам автомата прибавляются монеты буфера
-        foreach (var denomination in _outerCoins.Keys)
-            _innerCoins[denomination].Quantity += _outerCoins[denomination].Quantity;
+        foreach (var outerCoin in _outerCoins)
+        {
+            _innerCoins.TryGetValue(outerCoin, out var innerCoin);
+            innerCoin.Quantity += outerCoin.Quantity;
+        }
         
-        var res = new Dictionary<int, int>();
+        var res = new List<Coin>();
 
-        var shuffledCoins = _innerCoins.Select(c => c.Value).ToArray();
-        Random.Shared.Shuffle(shuffledCoins);
+        var changeCoins = _innerCoins.Select(c = new Coin() { Denomination = c.Denomination, Quantity = c.Quantity, IsRefillable = c.IsRefillable }).ToArray();
+        Random.Shared.Shuffle(changeCoins);
         
-        foreach(var coin in shuffledCoins)
+        foreach(var coin in changeCoins)
         {
             var count = change / coin.Denomination;
             
-            if (count > coin.Quantity)
-                count = coin.Quantity;
+            if (count < coin.Quantity)
+                coin.Quantity = count;
 
-            res.Add(coin.Denomination, count);
+            res.Add(coin);
             
-            change -= coin.Denomination * count;
+            change -= coin.Denomination * coin.Quantity;
 
             if (change != 0)
                 continue;
@@ -81,14 +76,20 @@ public class DrinksVendingMachine : IDisposable
                 drink.Quantity--;
             
             foreach (var changeCoin in res)
-                _innerCoins[changeCoin.Key].Quantity -= changeCoin.Value;
+            {
+                _innerCoins.TryGetValue(changeCoin, out var innerCoin);
+                innerCoin.Quantity -= changeCoin.Value;
+            }
                 
             return res;
         }
         
         // Сдачу выдать не получилось - вычитаем от монет автомата монеты буфера
-        foreach (var denomination in _outerCoins.Keys)
-            _innerCoins[denomination].Quantity -= _outerCoins[denomination].Quantity;
+        foreach (var outerCoin in _outerCoins)
+        {
+            _innerCoins.TryGetValue(outerCoin, out var innerCoin);
+            innerCoin.Quantity -= outerCoin.Quantity;
+        }
         
         return _outerCoins.ToDictionary(c => c.Key, c => c.Value.Quantity);
     }
@@ -104,16 +105,12 @@ public class DrinksVendingMachine : IDisposable
         Rest -= drink.Cost;
         _selectedDrinks.Add(drink);
     }
-    
-    public void Dispose() => _coinsDao.Dispose();
 
     public int Rest { get; private set; }
 
-    private readonly ICoinsDao _coinsDao;
-
-    private readonly Dictionary<int, Coin> _innerCoins;// Монеты автомата. Ключ - номинал монеты
+    private readonly HashSet<Coin> _innerCoins;// Монеты автомата
     
-    private readonly Dictionary<int, Coin> _outerCoins;// Монеты буфера. Клиент может вносить в автомат только те монеты, которые содержатся в буфере. Внесенные монеты переходят из буфера в автомат в тот момент, когда вызывается метод BuyDrinks()
+    private readonly HashSet<Coin> _outerCoins;// Монеты буфера. Клиент может вносить в автомат только те монеты, которые содержатся в буфере. Внесенные монеты переходят из буфера в автомат в тот момент, когда вызывается метод BuyDrinks()
 
     private readonly HashSet<Drink> _selectedDrinks = new();
 }
