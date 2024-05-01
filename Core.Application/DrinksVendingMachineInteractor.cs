@@ -42,7 +42,11 @@ public class DrinksVendingMachineInteractor(DrinksVendingMachine vending, IDrink
     {
         DepositedAmount = 0;
 
-        return vending.BuyDrinks();
+        var change = vending.BuyDrinks();
+
+        await drinksDao.SaveChanges();
+
+        return change;
     }
     
     public void Dispose()
