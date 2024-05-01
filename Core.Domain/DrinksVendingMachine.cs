@@ -9,6 +9,7 @@ public class DrinksVendingMachine : IDisposable
         var coins = _coinsDao.GetAll().ToArray();
         
         _innerCoins = coins.ToDictionary(c => c.Denomination);
+        
         _outerCoins = coins.Where(c => c.IsRefillable).ToDictionary(c => c.Denomination);
     }
 
@@ -71,7 +72,7 @@ public class DrinksVendingMachine : IDisposable
 
             res.Add(coin.Denomination, count);
             
-            change %= coin.Denomination;
+            change -= coin.Denomination * count;
 
             if (change != 0)
                 continue;
@@ -88,14 +89,8 @@ public class DrinksVendingMachine : IDisposable
         // Сдачу выдать не получилось - вычитаем от монет автомата монеты буфера
         foreach (var denomination in _outerCoins.Keys)
             _innerCoins[denomination].Quantity -= _outerCoins[denomination].Quantity;
-
+        
         return _outerCoins.ToDictionary(c => c.Key, c => c.Value.Quantity);
-    }
-    
-    public void ResetSelection()
-    {
-        foreach (var drink in _selectedDrinks.ToArray())
-            UnselectDrink(drink);
     }
 
     public void UnselectDrink(Drink drink)

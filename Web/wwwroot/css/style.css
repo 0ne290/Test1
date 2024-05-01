@@ -18,12 +18,12 @@ header {
     justify-content: center;
     align-items: center;
     font-size: 3rem;
-    color: #ffffff;
 }
 
 button {
     background-color: #000000;
-    border: thick solid #ff0000;
+    color: #ffffff;
+    border: medium solid #ff0000;
     border-radius: 50%;
 }
 

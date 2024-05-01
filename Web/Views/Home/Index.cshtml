@@ -6,7 +6,6 @@
 @section Header
 {
     <button style="border-color: #00ff00" id="deposit">0</button>
-    <button style="border-color: #00ff00" id="rest">0</button>
    @foreach (var coin in (IEnumerable<Coin>)ViewData["Coins"]!)
    {
        @if (coin.IsRefillable)
@@ -18,6 +17,8 @@
            <button style="border-color: #7e0000">@coin.Denomination</button>
        }
    }
+   <button style="border-color: #00ff00" id="rest">0</button>
+   <button onclick="func5()">Купить</button>
 }
 
 @foreach (var drink in (IEnumerable<Drink>)ViewData["Drinks"]!)
@@ -62,5 +63,16 @@ async function func4()
     let response = await fetch(`/home/GetRest`);
     
     rest.textContent = await response.text();
+}
+
+async function func5()
+{
+    let response = await fetch(`/home/BuyDrinks`);
+    
+    let change = await response.json();
+    
+    for (denomination in change) {
+      alert(`${denomination} ${change[denomination]}`);
+    }
 }
 </script>

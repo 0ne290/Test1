@@ -49,13 +49,6 @@ public class HomeController(ILogger<HomeController> logger, DrinksVendingMachine
     public async Task<ContentResult> ChooseDrink(int drinkKey) => Content((await vending.ChooseDrink(drinkKey)).ToString());
     
     public JsonResult BuyDrinks() => Json(vending.BuyDrinks());
-    
-    public OkResult ResetSelection()
-    {
-        vending.ResetSelection();
-
-        return Ok();
-    }
 
     public ContentResult GetRest() => Content(vending.Rest.ToString());
     
