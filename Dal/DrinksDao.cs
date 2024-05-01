@@ -10,5 +10,7 @@ public class DrinksDao(VendingContext vendingContext) : IDrinksDao
 
     public async Task<Drink?> TryGetByKey(int key) => await vendingContext.Drinks.FindAsync(key);
 
+    public async Task SaveChanges() => await vendingContext.SaveChangesAsync();
+
     public void Dispose() => vendingContext.Dispose();
 }
