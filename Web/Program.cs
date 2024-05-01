@@ -1,9 +1,7 @@
 using Core.Application;
 using Core.Domain;
 using Dal;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.IdentityModel.Tokens;
 
 namespace Web;
 
@@ -28,32 +26,34 @@ internal static class Program
                     new DrinksVendingMachine(new CoinsDao(new VendingContext(options))),
                     new DrinksDao(new VendingContext(options)));
             });
-        builder.Services.AddCoreAdmin("Administrator");
+        builder.Services.AddDbContext<VendingContext>(options => options.UseSqlite(builder.Configuration.GetConnectionString("Sqlite")));// Вообще-то все зависимости компонентов слоя бизнес логики (Core.Application) разрешаются в момент построения этих компонентов (т. е. зависимости компонентов НЕ зарегистрированы в качестве сервисов - зарегистрированы только сами компоненты), но для библиотеки CoreAdmin НЕОБХОДИМО регистрировать контекст БД в качестве сервиса - следовательно, этот сервис будет использоваться только библиотекой CoreAdmin
+        builder.Services.AddHttpContextAccessor();
+        builder.Services.AddCoreAdmin();
         
-        // Настраиваем авторизацию с помощью JWT
-        builder.Services.AddAuthorization();
-        builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-            .AddJwtBearer(options =>
-            {
-                options.TokenValidationParameters = new TokenValidationParameters
-                {
-                    // указывает, будет ли валидироваться издатель при валидации токена
-                    ValidateIssuer = true,
-                    // строка, представляющая издателя
-                    ValidIssuer = "TestServer",
-                    // будет ли валидироваться потребитель токена
-                    ValidateAudience = true,
-                    // установка потребителя токена
-                    ValidAudience = "TestServerClient",
-                    // установка ключа безопасности
-                    IssuerSigningKey = new SymmetricSecurityKey("mysupersecret_secretsecretsecretkey!123"u8.ToArray()),
-                    // валидация ключа безопасности
-                    ValidateIssuerSigningKey = true,
-                    //
-                    ValidateLifetime = false,
-                    LifetimeValidator = (_, _, _, _) => true
-                };
-            });
+        // Настраиваем авторизацию с помощью JWT. Это первый способ ограничить доступ к админке
+        //builder.Services.AddAuthorization();
+        //builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+        //    .AddJwtBearer(options =>
+        //    {
+        //        options.TokenValidationParameters = new TokenValidationParameters
+        //        {
+        //            // указывает, будет ли валидироваться издатель при валидации токена
+        //            ValidateIssuer = true,
+        //            // строка, представляющая издателя
+        //            ValidIssuer = "TestServer",
+        //            // будет ли валидироваться потребитель токена
+        //            ValidateAudience = true,
+        //            // установка потребителя токена
+        //            ValidAudience = "TestServerClient",
+        //            // установка ключа безопасности
+        //            IssuerSigningKey = new SymmetricSecurityKey("mysupersecret_secretsecretsecretkey!123"u8.ToArray()),
+        //            // валидация ключа безопасности
+        //            ValidateIssuerSigningKey = true,
+        //            //
+        //            ValidateLifetime = false,
+        //            LifetimeValidator = (_, _, _, _) => true
+        //        };
+        //    });
 
         var app = builder.Build();
 
@@ -77,6 +77,22 @@ internal static class Program
         app.MapControllerRoute(
             name: "default",
             pattern: "{controller=Home}/{action=Index}/{id?}");
+        
+        // Это второй способ ограничить доступ к админке
+        //app.UseCoreAdminCustomAuth(sp =>
+        //{
+        //    var httpRequest = sp.GetRequiredService<IHttpContextAccessor>().HttpContext!.Request;// Раньше я всегда смотрел документацию по System.Web.HttpContext, а сегодня я узнал, что оказывается в ASP.NET Core используется Microsoft.AspNetCore.Http.HttpContext и все это время я читал не ту документацию :)
+        //    try
+        //    {
+        //        return Task.FromResult(httpRequest.Query["accessKey"].ToString().GetHashString() == "E7126B537C1AC1C3B94F399A623D28A625D8A57769C698B8EFF044F25A47E469");
+        //    }
+        //    catch
+        //    {
+        //        return Task.FromResult(false);
+        //    }
+        //});
+        
+        app.UseCoreAdminCustomUrl("faa024b13a45492a845041423516d37c");// Это третий способ ограничить доступ к админке
 
         await app.RunAsync();
     }

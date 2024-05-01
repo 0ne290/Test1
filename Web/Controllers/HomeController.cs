@@ -12,31 +12,31 @@ namespace Web.Controllers;
 public class HomeController(ILogger<HomeController> logger, DrinksVendingMachineInteractor vending)
     : Controller
 {
-    [Authorize]
     public IActionResult Index()
     {
         ViewData["Drinks"] = vending.GetAllDrinks();
         return View();
     }
 
-    public ContentResult GetAdminToken(string login, string password)
-    {
-        const string secretLogin = "93555EA12CFBFB63CEAC169A3D59044B3A81A96C0BF636A5892B05557FDF399F";
-        const string secretPassword = "F2966F4292F082BD794F69D3617F5E10C40C35DED7DA48AB7ACCE5AE98F99C5A";
-        
-        if (login.GetHashString() != secretLogin || password.GetHashString() != secretPassword)
-            return Content(string.Empty);
-        
-        var jwt = new JwtSecurityToken(
-            issuer: "TestServer",
-            audience: "TestServerClient",
-            claims: new[] { new Claim(ClaimsIdentity.DefaultRoleClaimType, "Administrator") },
-            signingCredentials: new SigningCredentials(
-                new SymmetricSecurityKey("mysupersecret_secretsecretsecretkey!123"u8.ToArray()),
-                SecurityAlgorithms.HmacSha256));
-        
-        return Content(new JwtSecurityTokenHandler().WriteToken(jwt));
-    }
+    // Если все-таки юзать JWT, то этот эндпоинт должен использоваться для получения токена
+    //public ContentResult GetAdminToken(string login, string password)
+    //{
+    //    const string secretLogin = "93555EA12CFBFB63CEAC169A3D59044B3A81A96C0BF636A5892B05557FDF399F";
+    //    const string secretPassword = "F2966F4292F082BD794F69D3617F5E10C40C35DED7DA48AB7ACCE5AE98F99C5A";
+    //    
+    //    if (login.GetHashString() != secretLogin || password.GetHashString() != secretPassword)
+    //        return Content(string.Empty);
+    //    
+    //    var jwt = new JwtSecurityToken(
+    //        issuer: "TestServer",
+    //        audience: "TestServerClient",
+    //        claims: new[] { new Claim(ClaimsIdentity.DefaultRoleClaimType, "Administrator") },
+    //        signingCredentials: new SigningCredentials(
+    //            new SymmetricSecurityKey("mysupersecret_secretsecretsecretkey!123"u8.ToArray()),
+    //            SecurityAlgorithms.HmacSha256));
+    //    
+    //    return Content(new JwtSecurityTokenHandler().WriteToken(jwt));
+    //}
 
     public ContentResult DepositeCoin(int denomination) => Content(vending.DepositeCoin(denomination).ToString());
 

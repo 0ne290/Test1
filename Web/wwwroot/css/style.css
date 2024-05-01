@@ -22,5 +22,12 @@ header {
 main {
     width: 70%;
     margin-inline: auto;
+}
+
+div {
+    margin-inline: 3%;
+    margin-top: 3vh;
+    flex: 1 0 20%;
+    min-height: 20vh;
     background-color: #6f6f6f;
 }

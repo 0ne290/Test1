@@ -5,7 +5,7 @@ namespace Web;
 
 public static class Extensions
 {
-    public static string GetHashString(this string inputString)
+    public static string GetHashString(this string inputString)// Этот метод используется в случае с ограничением доступа к админке способами 1 и 2
     {
         var sb = new StringBuilder();
 
