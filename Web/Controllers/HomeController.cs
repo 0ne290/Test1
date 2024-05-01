@@ -15,6 +15,7 @@ public class HomeController(ILogger<HomeController> logger, DrinksVendingMachine
     public IActionResult Index()
     {
         ViewData["Drinks"] = vending.GetAllDrinks();
+        ViewData["Coins"] = vending.GetAllCoins();
         return View();
     }
 
@@ -38,7 +39,12 @@ public class HomeController(ILogger<HomeController> logger, DrinksVendingMachine
     //    return Content(new JwtSecurityTokenHandler().WriteToken(jwt));
     //}
 
-    public ContentResult DepositeCoin(int denomination) => Content(vending.DepositeCoin(denomination).ToString());
+    public OkResult DepositeCoin(int denomination)
+    {
+        vending.DepositeCoin(denomination);
+
+        return Ok();
+    }
 
     public async Task<ContentResult> ChooseDrink(int drinkKey) => Content((await vending.ChooseDrink(drinkKey)).ToString());
     

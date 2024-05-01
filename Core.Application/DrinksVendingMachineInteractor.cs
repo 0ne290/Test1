@@ -5,8 +5,10 @@ namespace Core.Application;
 public class DrinksVendingMachineInteractor(DrinksVendingMachine vending, IDrinksDao drinksDao) : IDisposable
 {
     public IEnumerable<Drink> GetAllDrinks() => drinksDao.GetAll();
+    
+    public IEnumerable<Coin> GetAllCoins() => vending.GetAllCoins();
 
-    public int DepositeCoin(int denomination)
+    public void DepositeCoin(int denomination)
     {
         if (!vending.CoinIsAllowed(denomination))
             throw new Exception($"Coin {denomination} is not available for replenishment.");
@@ -14,7 +16,6 @@ public class DrinksVendingMachineInteractor(DrinksVendingMachine vending, IDrink
         vending.DepositeCoin(denomination);
 
         DepositedAmount += denomination;
-        return DepositedAmount;
     }
 
     public async Task<bool> ChooseDrink(int drinkKey)
@@ -24,17 +25,14 @@ public class DrinksVendingMachineInteractor(DrinksVendingMachine vending, IDrink
         if (drink == null)
             throw new Exception($"This machine does not contain a drink with the {drinkKey} key.");
 
-        if (drink.Quantity < 1)
-            throw new Exception($"Drink {drink.Name} is out of stock.");
-
-        if (!vending.DrinkAvailabe(drink))
-            throw new Exception($"Cost of the drink {drink.Name} is more than the deposited amount.");
-
-        if (vending.DrinkSelected(drink))
+        if (vending.DrinkSelected(drink))// Вернуть false, если напиток уже выделен или если его выделить невозможно
         {
             vending.UnselectDrink(drink);
             return false;
         }
+        
+        if (drink.Quantity < 1 || !vending.DrinkAvailabe(drink))// Вернуть false, если напиток уже выделен или если его выделить невозможно
+            return false;
 
         vending.SelectDrink(drink);
         return true;

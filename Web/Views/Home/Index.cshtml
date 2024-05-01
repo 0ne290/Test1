@@ -1,10 +1,66 @@
-﻿@{
+﻿@using Core.Domain
+@{
     ViewData["Title"] = "Home Page";
 }
 
-<div style="margin-inline: 3%; margin-top: 3vh; width: 20%; min-height: 20vh; background-color: #6f6f6f;">Zxc993</div>
-<div style="margin-inline: 3%; margin-top: 3vh; width: 20%; min-height: 20vh; background-color: #6f6f6f;">Zxc993</div>
-<div style="margin-inline: 3%; margin-top: 3vh; width: 20%; min-height: 20vh; background-color: #6f6f6f;">Zxc993</div>
-<div style="margin-inline: 3%; margin-top: 3vh; width: 20%; min-height: 20vh; background-color: #6f6f6f;">Zxc993</div>
-<div style="margin-inline: 3%; margin-top: 3vh; width: 20%; min-height: 20vh; background-color: #6f6f6f;">Zxc993</div>
-<div style="margin-inline: 3%; margin-top: 3vh; width: 20%; min-height: 20vh; background-color: #6f6f6f;">Zxc993</div>
+@section Header
+{
+    <button style="border-color: #00ff00" id="deposit">0</button>
+    <button style="border-color: #00ff00" id="rest">0</button>
+   @foreach (var coin in (IEnumerable<Coin>)ViewData["Coins"]!)
+   {
+       @if (coin.IsRefillable)
+       {
+           <button onclick="func2(this)">@coin.Denomination</button>
+       }
+       else
+       {
+           <button style="border-color: #7e0000">@coin.Denomination</button>
+       }
+   }
+}
+
+@foreach (var drink in (IEnumerable<Drink>)ViewData["Drinks"]!)
+{
+    <div onclick="func1(this)" data-value="@drink.Key"><img src="@drink.ImagePath"><p>Название: @drink.Name</p><p>Цена: @drink.Cost</p><p>Кол-во: @drink.Quantity</p></div>
+}
+
+<script>
+var deposit = document.getElementById("deposit");
+var rest = document.getElementById("rest");
+
+async function func1(div)
+{
+    let response = await fetch(`/home/ChooseDrink?drinkKey=${div.getAttribute("data-value")}`);
+    let drinkSelected = await response.text();
+    
+    if (drinkSelected === "True")
+        div.style.borderColor = 'red';
+    else
+        div.style.borderColor = '#ffffff';
+    
+    await func4();
+}
+
+async function func2(button)
+{
+    let response = await fetch(`/home/DepositeCoin?denomination=${button.textContent}`);
+    
+    await func3();
+    await func4();
+}
+
+async function func3()
+{
+    let response = await fetch(`/home/GetDeposite`);
+    
+    deposit.textContent = await response.text();
+}
+
+async function func4()
+{
+    let response = await fetch(`/home/GetRest`);
+    
+    rest.textContent = await response.text();
+}
+</script>

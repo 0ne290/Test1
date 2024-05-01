@@ -11,6 +11,8 @@ public class DrinksVendingMachine : IDisposable
         _innerCoins = coins.ToDictionary(c => c.Denomination);
         _outerCoins = coins.Where(c => c.IsRefillable).ToDictionary(c => c.Denomination);
     }
+
+    public IEnumerable<Coin> GetAllCoins() => _coinsDao.GetAll();
     
     public bool DrinkSelected(Drink drink) => _selectedDrinks.Contains(drink);
 
