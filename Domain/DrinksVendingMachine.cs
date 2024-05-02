@@ -9,6 +9,8 @@ public class DrinksVendingMachine : IDisposable
         
         _innerCoins = _coinsDao.GetAll().ToDictionary(c => c.Denomination);
         _outerCoins = _coinsDao.GetAllCopies().Where(c => c.IsRefillable).ToDictionary(c => c.Denomination);
+        foreach (var outerCoin in _outerCoins)
+            outerCoin.Value.Quantity = 0;
     }
     
     public IEnumerable<Drink> GetAllDrinks() => _drinksDao.GetAllCopies();
