@@ -1,4 +1,4 @@
-﻿@using Core.Domain
+﻿@using Domain
 @{
     ViewData["Title"] = "Home Page";
 }
@@ -29,6 +29,9 @@
 <script>
 var deposit = document.getElementById("deposit");
 var rest = document.getElementById("rest");
+
+func3();
+func4();
 
 async function func1(div)
 {
@@ -71,8 +74,13 @@ async function func5()
     
     let change = await response.json();
     
+    let message = "Сдача (левое число от символа '|' - номинал монеты, правое - кол-во монет):\n";
     for (denomination in change) {
-      alert(`${denomination} ${change[denomination]}`);
+      message += `${denomination} | ${change[denomination]}\n`;
     }
+    
+    alert(message);
+    
+    location.reload();
 }
 </script>

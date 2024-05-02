@@ -1,15 +1,11 @@
 ﻿using System.Diagnostics;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using Core.Application;
-using Microsoft.AspNetCore.Authorization;
+using Domain;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.Tokens;
 using Web.Models;
 
 namespace Web.Controllers;
 
-public class HomeController(ILogger<HomeController> logger, DrinksVendingMachineInteractor vending)
+public class HomeController(ILogger<HomeController> logger, DrinksVendingMachine vending)
     : Controller
 {
     public IActionResult Index()
@@ -48,7 +44,7 @@ public class HomeController(ILogger<HomeController> logger, DrinksVendingMachine
 
     public async Task<ContentResult> ChooseDrink(int drinkKey) => Content((await vending.ChooseDrink(drinkKey)).ToString());
     
-    public JsonResult BuyDrinks() => Json(vending.BuyDrinks());
+    public async Task<JsonResult> BuyDrinks() => Json(await vending.BuyDrinks());
 
     public ContentResult GetRest() => Content(vending.Rest.ToString());
     

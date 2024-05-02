@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace Core.Domain;
+namespace Domain;
 
 public class Coin
 {

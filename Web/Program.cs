@@ -1,7 +1,7 @@
-using Core.Application;
-using Core.Domain;
+using Domain;
 using Dal;
 using Microsoft.EntityFrameworkCore;
+using DrinksVendingMachine = Domain.DrinksVendingMachine;
 
 namespace Web;
 
@@ -13,7 +13,7 @@ internal static class Program
 
         // Add services to the container.
         builder.Services.AddControllersWithViews();
-        builder.Services.AddSingleton<DrinksVendingMachineInteractor>(// Т. к. работа с автоматом это постоянное общение между сервером и клиентом посредством AJAX, то состояние автомата должно сохраняться на протяжении всей работы с ним. А это значит, что если экземпляр автомата будет создаваться только на время одного запроса, то состояние автомата будет постоянно сбрасываться и работа с ним будет невозможна. Подводя черту: если сервис автомата Scope или Transient, то после каждого AJAX-запроса состояние автомата будет сброшено - так не пойдет. Чтобы решить проблему, делаем сервис автомата синглтоном. Это НЕ идеальное решание - по хорошему время жизни должно быть Scope, при этом область видимости должна быть кастомной и это должно быть нечто более сложное, чем просто HTTP-запрос. Навскидку можно попробовать решить с помощью куки. Хотя, возможно, решение лежит в сессиях, но я мало что об этом знаю. В любом случае: это тестовое задание, а не коммерческий проект - итак сойдет)
+        builder.Services.AddSingleton<DrinksVendingMachine>(// Т. к. работа с автоматом это постоянное общение между сервером и клиентом посредством AJAX, то состояние автомата должно сохраняться на протяжении всей работы с ним. А это значит, что если экземпляр автомата будет создаваться только на время одного запроса, то состояние автомата будет постоянно сбрасываться и работа с ним будет невозможна. Подводя черту: если сервис автомата Scope или Transient, то после каждого AJAX-запроса состояние автомата будет сброшено - так не пойдет. Чтобы решить проблему, делаем сервис автомата синглтоном. Это НЕ идеальное решание - по хорошему время жизни должно быть Scope, при этом область видимости должна быть кастомной и это должно быть нечто более сложное, чем просто HTTP-запрос. Навскидку можно попробовать решить с помощью куки. Хотя, возможно, решение лежит в сессиях, но я мало что об этом знаю. В любом случае: это тестовое задание, а не коммерческий проект - итак сойдет)
             serviceProvider =>
             {
                 var optionsBuilder = new DbContextOptionsBuilder<VendingContext>();
@@ -22,11 +22,9 @@ internal static class Program
                     .UseSqlite(serviceProvider.GetService<IConfiguration>()!.GetConnectionString("Sqlite"))
                     .Options;
 
-                return new DrinksVendingMachineInteractor(
-                    new DrinksVendingMachine(new CoinsDao(new VendingContext(options))),
-                    new DrinksDao(new VendingContext(options)));
+                return new DrinksVendingMachine(new Dao<Drink>(new VendingContext(options)), new Dao<Coin>(new VendingContext(options)));
             });
-        builder.Services.AddDbContext<VendingContext>(options => options.UseSqlite(builder.Configuration.GetConnectionString("Sqlite")));// Вообще-то все зависимости компонентов слоя бизнес логики (Core.Application) разрешаются в момент построения этих компонентов (т. е. зависимости компонентов НЕ зарегистрированы в качестве сервисов - зарегистрированы только сами компоненты), но для библиотеки CoreAdmin НЕОБХОДИМО регистрировать контекст БД в качестве сервиса - следовательно, этот сервис будет использоваться только библиотекой CoreAdmin
+        builder.Services.AddDbContext<VendingContext>(options => options.UseSqlite(builder.Configuration.GetConnectionString("Sqlite")));// Вообще-то все зависимости компонентов слоя бизнес логики (Domain) разрешаются в момент построения этих компонентов (т. е. зависимости компонентов НЕ зарегистрированы в качестве сервисов - зарегистрированы только сами компоненты), но для библиотеки CoreAdmin НЕОБХОДИМО регистрировать контекст БД в качестве сервиса - следовательно, этот сервис будет использоваться только библиотекой CoreAdmin
         builder.Services.AddHttpContextAccessor();
         builder.Services.AddCoreAdmin();
         

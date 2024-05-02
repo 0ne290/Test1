@@ -7,8 +7,4 @@
         <LangVersion>12</LangVersion>
     </PropertyGroup>
 
-    <ItemGroup>
-      <ProjectReference Include="..\Core.Domain\Core.Domain.csproj" />
-    </ItemGroup>
-
 </Project>
