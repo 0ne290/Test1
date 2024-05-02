@@ -90,7 +90,9 @@ internal static class Program
         //    }
         //});
         
-        app.UseCoreAdminCustomUrl("faa024b13a45492a845041423516d37c");// Это третий способ ограничить доступ к админке
+        // Это третий способ ограничить доступ к админке
+        app.UseCoreAdminCustomAuth(_ => Task.FromResult(true));
+        app.UseCoreAdminCustomUrl("faa024b13a45492a845041423516d37c");
 
         await app.RunAsync();
     }
