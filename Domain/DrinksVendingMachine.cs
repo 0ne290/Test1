@@ -68,21 +68,17 @@ public class DrinksVendingMachine : IDisposable
     
     public async Task<Dictionary<int, int>> BuyDrinks()
     {
-        DepositedAmount = 0;
-
-        var change = Rest;
-        Rest = 0;
-
-        Dictionary<int, int> res;
-        if (change == 0)
+        var res = GetChange(Rest);
+        if (res != null)
         {
-            res = new Dictionary<int, int>();
-            
             foreach (var drink in _selectedDrinks)
                 drink.Quantity--;
+
+            foreach (var changeCoin in res)
+                _innerCoins[changeCoin.Key].Quantity -= changeCoin.Value;
         }
         else
-            res = GetChange(change);
+            res = _outerCoins.ToDictionary(c => c.Key, c => c.Value.Quantity);
         
         _selectedDrinks.Clear();
         foreach (var coin in _outerCoins)
@@ -90,11 +86,14 @@ public class DrinksVendingMachine : IDisposable
 
         await _drinksDao.SaveChanges();
         await _coinsDao.SaveChanges();
+        
+        DepositedAmount = 0; 
+        Rest = 0;
 
         return res;
     }
     
-    private Dictionary<int, int> GetChange(int change)// Жадный алгоритм расчета кол-ва монет для сдачи. Представьте, что монеты с одинаковым номиналом собраны в кучи, лежащие в ряд слева направо. Тогда этот жадный алгоритм будет максимально быстро израсходовать самые левые кучи - не "ВАУ", конечно, но зато просто. Хотя псевдо-оптимизация все же присутствует - представьте также, что на каждый расчет порядок куч всегда определяется случайно
+    private Dictionary<int, int>? GetChange(int change)// Жадный алгоритм расчета кол-ва монет для сдачи. Представьте, что монеты с одинаковым номиналом собраны в кучи, лежащие в ряд слева направо. Тогда этот жадный алгоритм будет максимально быстро израсходовать самые левые кучи - не "ВАУ", конечно, но зато просто. Хотя псевдо-оптимизация все же присутствует - представьте также, что на каждый расчет порядок куч всегда определяется случайно
     {
         // К монетам автомата прибавляются монеты буфера
         foreach (var outerCoin in _outerCoins)
@@ -107,6 +106,9 @@ public class DrinksVendingMachine : IDisposable
         
         foreach(var coin in changeCoins)
         {
+            if (change == 0) 
+                return res;
+            
             var count = change / coin.Denomination;
 
             if (count > coin.Quantity)
@@ -115,24 +117,13 @@ public class DrinksVendingMachine : IDisposable
             res.Add(coin.Denomination, count);
             
             change -= coin.Denomination * count;
-
-            if (change != 0)
-                continue;
-            
-            foreach (var drink in _selectedDrinks)
-                drink.Quantity--;
-            
-            foreach (var changeCoin in res)
-                _innerCoins[changeCoin.Key].Quantity -= changeCoin.Value;
-                
-            return res;
         }
         
         // Сдачу выдать не получилось - вычитаем от монет автомата монеты буфера
         foreach (var outerCoin in _outerCoins)
             _innerCoins[outerCoin.Key].Quantity -= outerCoin.Value.Quantity;
         
-        return _outerCoins.ToDictionary(c => c.Key, c => c.Value.Quantity);
+        return null;
     }
     
     public void Dispose()
